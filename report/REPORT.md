@@ -1,8 +1,8 @@
 # Báo Cáo Lab 7: Embedding & Vector Store
 
-**Họ tên:** [Tên sinh viên]
-**Nhóm:** [Tên nhóm]
-**Ngày:** [Ngày nộp]
+**Họ tên:** Vũ Lê Hoàng
+**Nhóm:** A1-C401
+**Ngày:** 10/4/2026
 
 ---
 
@@ -11,29 +11,29 @@
 ### Cosine Similarity (Ex 1.1)
 
 **High cosine similarity nghĩa là gì?**
-> *Viết 1-2 câu:*
+> *Viết 1-2 câu:* Là độ tương đồng về hướng giữa hai vector trong không gian embedding. Nếu hai chunks có cosine similarity cao, nghĩa là chúng có nội dung hoặc ngữ nghĩa rất giống nhau.
 
 **Ví dụ HIGH similarity:**
-- Sentence A:
-- Sentence B:
-- Tại sao tương đồng:
+- Sentence A: Tôi thích ăn phở vào buổi sáng.
+- Sentence B: Tôi yêu thích món phở vào buổi sáng.
+- Tại sao tương đồng: Cả hai câu đều nói về việc thích ăn phở vào buổi sáng, chỉ khác cách diễn đạt.
 
 **Ví dụ LOW similarity:**
-- Sentence A:
-- Sentence B:
-- Tại sao khác:
+- Sentence A: Tôi cần mua mô hình máy bay điều khiển từ xa.
+- Sentence B: Tôi thích ăn phở vào buổi sáng.
+- Tại sao khác: Hai câu nói về hai chủ đề hoàn toàn khác nhau - một về mua sắm, một về ẩm thực.
 
 **Tại sao cosine similarity được ưu tiên hơn Euclidean distance cho text embeddings?**
-> *Viết 1-2 câu:*
+> *Viết 1-2 câu:* Cosine similarity đo lường góc giữa hai vector, tập trung vào hướng hơn là độ dài. Điều này quan trọng vì trong không gian embedding, hai chunks có thể có độ dài khác nhau nhưng vẫn mang cùng ý nghĩa nếu chúng hướng về cùng một điểm trong không gian. Euclidean distance có thể bị ảnh hưởng bởi độ dài của vector, dẫn đến kết quả không chính xác khi so sánh các chunks có độ dài khác nhau.
 
 ### Chunking Math (Ex 1.2)
 
 **Document 10,000 ký tự, chunk_size=500, overlap=50. Bao nhiêu chunks?**
-> *Trình bày phép tính:*
-> *Đáp án:*
+> *Trình bày phép tính:* Document dài 10,000 ký tự. Mỗi chunk có 500 ký tự, nhưng có overlap 50 ký tự giữa các chunk. Điều này có nghĩa là mỗi chunk mới sẽ bắt đầu 450 ký tự sau chunk trước đó (500 - 50 = 450).
+> *Đáp án:* Số chunks = (10,000 - 500) / 450 + 1 = 22.22 → làm tròn lên thành 23 chunks.
 
 **Nếu overlap tăng lên 100, chunk count thay đổi thế nào? Tại sao muốn overlap nhiều hơn?**
-> *Viết 1-2 câu:*
+> *Viết 1-2 câu:* Nếu overlap tăng lên 100, mỗi chunk mới sẽ bắt đầu 400 ký tự sau chunk trước đó (500 - 100 = 400). Số chunks = (10,000 - 500) / 400 + 1 = 24.25 → làm tròn lên thành 25 chunks. Overlap nhiều hơn giúp bảo tồn ngữ cảnh giữa các chunks, đặc biệt hữu ích khi nội dung có tính liên kết cao hoặc khi muốn đảm bảo rằng các thông tin quan trọng không bị cắt đứt giữa các chunks.
 
 ---
 
