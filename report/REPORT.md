@@ -41,27 +41,32 @@
 
 ### Domain & Lý Do Chọn
 
-**Domain:** [ví dụ: Customer support FAQ, Vietnamese law, cooking recipes, ...]
+**Domain:** [Quy chế và Điều khoản dịch vụ của Xanh SM (Grab-like service in Vietnam), hỗ trợ FAQ cho tài xế XanhSM]
 
 **Tại sao nhóm chọn domain này?**
-> *Viết 2-3 câu:*
+> *Nhóm chọn domain Xanh SM vì đây là bộ tài liệu thực tế, có cấu trúc phân mục rõ ràng và chứa nhiều thông tin chi tiết về chính sách, bồi thường, bảo mật. Việc xây dựng RAG trên bộ dữ liệu tiếng Việt này giúp giải quyết các bài toán hỗ trợ khách hàng thực tế và kiểm chứng khả năng hiểu ngữ nghĩa của tiếng Việt trong embedding.*
 
 ### Data Inventory
 
 | # | Tên tài liệu | Nguồn | Số ký tự | Metadata đã gán |
 |---|--------------|-------|----------|-----------------|
-| 1 | | | | |
-| 2 | | | | |
-| 3 | | | | |
-| 4 | | | | |
-| 5 | | | | |
+| 1 | 1_điều_khoản_sử_dụng.md | Xanh SM | 42,252 | source, category_guess |
+| 2 | 2_chính_sách_sử_dụng_cookies.md | Xanh SM | 7,242 | source, category_guess |
+| 3 | 3_chính_sách_bảo_vệ_dữ_liệu_cá_nhân.md | Xanh SM | 35,162 | source, category_guess |
+| 4 | 4_miễn_trừ_trách_nhiệm.md | Xanh SM | 1,341 | source, category_guess |
+| 5 | 5_quy_trình_dành_cho_người_dùng.md | Xanh SM | 5,217 | source, category_guess |
+| 6 | 6_quy_chế_sử_dụng_sản_phẩm_xanh_bike.md | Xanh SM | 3,323 | source, category_guess |
+| 7 | 7_quy_chế_sử_dụng_sản_phẩm_xanh_express.md | Xanh SM | 14,804 | source, category_guess |
+| 8 | 8_quy_chế_sử_dụng_sản_phẩm_xanh_car.md | Xanh SM | 3,349 | source, category_guess |
+| 9 | 9_quy_chế_sử_dụng_tài_khoản_gia_đình.md | Xanh SM | 5,280 | source, category_guess |
+| 10 | 10_quy_chế_sử_dụng_sản_phẩm_xanh_ngon.md | Xanh SM | 10,539 | source, category_guess |
 
 ### Metadata Schema
 
 | Trường metadata | Kiểu | Ví dụ giá trị | Tại sao hữu ích cho retrieval? |
 |----------------|------|---------------|-------------------------------|
-| | | | |
-| | | | |
+| `source` | `str` | `1_điều_khoản_sử_dụng.md` | Giúp người dùng biết thông tin trích dẫn từ file nào. |
+| `category_guess` | `str` | `Bike`, `Express`, `Car` | Cho phép lọc nhanh (filter) theo từng loại dịch vụ cụ thể để tăng độ chính xác. |
 
 ---
 
@@ -73,9 +78,13 @@ Chạy `ChunkingStrategyComparator().compare()` trên 2-3 tài liệu:
 
 | Tài liệu | Strategy | Chunk Count | Avg Length | Preserves Context? |
 |-----------|----------|-------------|------------|-------------------|
-| | FixedSizeChunker (`fixed_size`) | | | |
-| | SentenceChunker (`by_sentences`) | | | |
-| | RecursiveChunker (`recursive`) | | | |
+| Toàn bộ 10 docs | FixedSizeChunker (`fixed_size`) | 218 | ~500 | No (Cắt ngang câu, mất ngữ cảnh biên) |
+| Toàn bộ 10 docs | SentenceChunker (`by_sentences`) | 239 | ~Varies | Yes (Theo câu, nhưng chunk có thể quá ngắn) |
+| Toàn bộ 10 docs | RecursiveChunker (`recursive`) | 262 | ~500 | Yes (Giữ cấu trúc đoạn/mục, tối ưu cho RAG) |
+
+**Phân tích (Chunk Coherence):**
+Chiến lược `Recursive` tạo ra nhiều chunk nhất (262) nhưng đảm bảo tính mạch lạc cao nhất. So với `FixedSize`, nó không chỉ đảm bảo độ dài trung bình ổn định mà còn tôn trọng ranh giới ngữ nghĩa (\n\n, \n), giúp tránh việc thông tin quan trọng bị chia làm hai nửa.
+
 
 ### Strategy Của Tôi
 
