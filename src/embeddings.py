@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib
 import math
 
-LOCAL_EMBEDDING_MODEL = "all-MiniLM-L6-v2"
+LOCAL_EMBEDDING_MODEL = "microsoft/harrier-oss-v1-0.6b"
 OPENAI_EMBEDDING_MODEL = "text-embedding-3-small"
 EMBEDDING_PROVIDER_ENV = "EMBEDDING_PROVIDER"
 

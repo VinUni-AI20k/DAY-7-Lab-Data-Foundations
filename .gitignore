@@ -17,3 +17,9 @@ __pycache__/
 .omx/
 .venv/
 src_w_solution/
+
+mydata/
+chroma_data/
+scifact/
+.hf-cache/
+.sentence-transformers/

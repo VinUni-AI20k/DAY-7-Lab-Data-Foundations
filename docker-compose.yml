@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  rag-api:
+    build: .
+    container_name: rag_api_service
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    
+    # Load all environment variables (API keys, Embedder provider)
+    env_file:
+      - .env
+      
+    # Mount volumes to prevent downloading models and data again inside Docker
+    volumes:
+      # Data Persistence (Vector DB)
+      - ./chroma_data:/app/chroma_data
+      
+      # Model Cache Mapping (HuggingFace & Transformers based on your .env paths)
+      - ./.hf-cache:/app/.hf-cache
+      - ./.sentence-transformers:/app/.sentence-transformers

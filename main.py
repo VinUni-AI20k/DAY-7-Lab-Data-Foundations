@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import sys
 from pathlib import Path
+from typing import Callable
 
 from dotenv import load_dotenv
 
@@ -27,6 +28,7 @@ SAMPLE_FILES = [
     "data/vi_retrieval_notes.md",
 ]
 
+load_dotenv(override=False)
 
 def load_documents_from_files(file_paths: list[str]) -> list[Document]:
     """Load documents from file paths for the manual demo."""
@@ -62,27 +64,39 @@ def demo_llm(prompt: str) -> str:
     return f"[DEMO LLM] Generated answer from prompt preview: {preview}..."
 
 
+def get_llm_fn() -> Callable[[str], str]:
+    """Return an LLM caller based on environment configs."""
+    api_key = os.getenv("DASHSCOPE_API_KEY")
+    if not api_key:
+        return demo_llm
+        
+    try:
+        from openai import OpenAI
+        base_url = os.getenv("DASHSCOPE_ENDPOINT", "https://dashscope-intl.aliyuncs.com/compatible-mode/v1")
+        model = os.getenv("QWEN_MODEL", "qwen3.5-27b")
+        client = OpenAI(api_key=api_key, base_url=base_url)
+        
+        def dashscope_llm(prompt: str) -> str:
+            print(f"[LLM] Generating answer using Qwen model ({model})...")
+            response = client.chat.completions.create(
+                model=model,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.7
+            )
+            return response.choices[0].message.content
+            
+        return dashscope_llm
+    except ImportError:
+        print("[LLM Warn] 'openai' package not installed, falling back to demo_llm")
+        return demo_llm
+
+
 def run_manual_demo(question: str | None = None, sample_files: list[str] | None = None) -> int:
     files = sample_files or SAMPLE_FILES
     query = question or "Summarize the key information from the loaded files."
 
     print("=== Manual File Test ===")
-    print("Accepted file types: .md, .txt")
-    print("Input file list:")
-    for file_path in files:
-        print(f"  - {file_path}")
-
-    docs = load_documents_from_files(files)
-    if not docs:
-        print("\nNo valid input files were loaded.")
-        print("Create files matching the sample paths above, then rerun:")
-        print("  python3 main.py")
-        return 1
-
-    print(f"\nLoaded {len(docs)} documents")
-    for doc in docs:
-        print(f"  - {doc.id}: {doc.metadata['source']}")
-
+    
     load_dotenv(override=False)
     provider = os.getenv(EMBEDDING_PROVIDER_ENV, "mock").strip().lower()
     if provider == "local":
@@ -100,22 +114,50 @@ def run_manual_demo(question: str | None = None, sample_files: list[str] | None 
 
     print(f"\nEmbedding backend: {getattr(embedder, '_backend_name', embedder.__class__.__name__)}")
 
-    store = EmbeddingStore(collection_name="manual_test_store", embedding_fn=embedder)
-    store.add_documents(docs)
+    store = EmbeddingStore(collection_name=os.getenv("COLLECTION_NAME"), embedding_fn=embedder)
+    
+    if store.get_collection_size() > 0:
+        print(f"\n[Vector DB] Found {store.get_collection_size()} chunks in {os.getenv("COLLECTION_NAME")}. Skipping file ingestion.")
+    else:
+        print("Accepted file types: .md, .txt")
+        print("Input file list:")
+        for file_path in files:
+            print(f"  - {file_path}")
+
+        docs = load_documents_from_files(files)
+        if not docs:
+            print("\nNo valid input files were loaded.")
+            print("Create files matching the sample paths above, then rerun:")
+            print("  python3 main.py")
+            return 1
+
+        print(f"\nLoaded {len(docs)} documents")
+        for doc in docs:
+            print(f"  - {doc.id}: {doc.metadata['source']}")
+            
+        store.add_documents(docs)
 
     print(f"\nStored {store.get_collection_size()} documents in EmbeddingStore")
     print("\n=== EmbeddingStore Search Test ===")
-    print(f"Query: {query}")
-    search_results = store.search(query, top_k=3)
+    
+    try:
+        threshold = float(os.getenv("VEC_SIM_THREDHOLD", "0.0"))
+    except ValueError:
+        threshold = 0.0
+        
+    print(f"Query: {query} | Cosine Threshold: {threshold}")
+    search_results = store.search(query, top_k=5, threshold=threshold)
     for index, result in enumerate(search_results, start=1):
         print(f"{index}. score={result['score']:.3f} source={result['metadata'].get('source')}")
         print(f"   content preview: {result['content'][:120].replace(chr(10), ' ')}...")
 
     print("\n=== KnowledgeBaseAgent Test ===")
-    agent = KnowledgeBaseAgent(store=store, llm_fn=demo_llm)
+    
+    llm = get_llm_fn()
+    agent = KnowledgeBaseAgent(store=store, llm_fn=llm)
     print(f"Question: {query}")
     print("Agent answer:")
-    print(agent.answer(query, top_k=3))
+    print(agent.answer(query, top_k=5, threshold=threshold))
     return 0
 
 
